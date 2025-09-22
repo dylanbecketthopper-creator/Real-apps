@@ -17,9 +17,6 @@ feedbackEl.style.marginTop = "0.5rem";
 feedbackEl.style.fontWeight = "bold";
 stepContent.appendChild(feedbackEl);
 
-// ===== PUT YOUR OPENAI API KEY HERE =====
-const OPENAI_API_KEY = "ADD KEY HERE";
-
 // Pages
 function goHome() {
   homePage.classList.remove("hidden");
@@ -32,65 +29,24 @@ async function startLesson() {
   step = 0;
   stepContent.innerHTML = "<p>Loading AI lesson...</p>";
 
-  // Call OpenAI
+  // Call serverless function instead of direct API
   steps = await fetchAILesson();
   renderStep();
 }
 
-// Fetch AI lesson from OpenAI
+// Fetch AI lesson via Netlify function
 async function fetchAILesson() {
-  const prompt = `
-Generate a completely new and unique 5-step interactive life skills lesson for a beginner. 
-The topic should be practical, useful, and not repeat previous examples. 
-Some possible inspirations are things like "How to read a map properly" or "How to tie a knot you might need". 
-But you must choose your own fresh topic each time. 
-
-Requirements:
-1. Create a 5-step lesson.
-2. Each step should include a short title and a short text explanation.
-3. Include multiple choice quiz questions where needed, with a "correct" answer key.
-4. At least one step should have an input challenge with a numeric answer (include "input:true" and "answer" fields).
-5. The final step should be a wrap-up with no quiz, and include a "finish": true field.
-6. Return only a JSON array of objects, with these possible keys: 
-   - title
-   - content
-   - choices (array of strings)
-   - correct (string for multiple choice)
-   - need (array, optional for categorize step)
-   - want (array, optional for categorize step)
-   - input (boolean)
-   - answer (number for input step)
-   - finish (boolean, for last step).
-`;
-
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4.1-mini",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 1.0
-      })
-    });
+    const response = await fetch("/.netlify/functions/getLesson");
+    if (!response.ok) throw new Error("Function call failed");
 
-    const data = await response.json();
-
-    // Get the AI's JSON response
-    let text = data.choices[0].message.content;
-    text = text.replace(/```json|```/g,"").trim();
-
-    const aiSteps = JSON.parse(text);
+    const aiSteps = await response.json();
     return aiSteps;
-
-  } catch(err) {
+  } catch (err) {
     console.error(err);
-    alert("Failed to fetch AI lesson. Check API key or network.");
+    alert("Failed to fetch AI lesson. Check your Netlify function.");
     return [
-      { title:"Error", content:"AI lesson could not be loaded." }
+      { title: "Error", content: "AI lesson could not be loaded." }
     ];
   }
 }
@@ -110,8 +66,8 @@ function renderStep() {
       const btn = document.createElement("button");
       btn.textContent = choice;
       btn.className = "styled-btn"; // ✅ use your style
-      btn.style.display="block";
-      btn.style.margin="0.5rem 0";
+      btn.style.display = "block";
+      btn.style.margin = "0.5rem 0";
       btn.onclick = () => {
         if (choice === s.correct) {
           feedbackEl.textContent = "🎉 Correct!";
@@ -169,15 +125,15 @@ function renderStep() {
     stepContent.appendChild(btn);
   }
 
-  progressBar.style.width = `${((step+1)/steps.length)*100}%`;
+  progressBar.style.width = `${((step + 1) / steps.length) * 100}%`;
 }
 
 // Navigation
 function nextStep() {
-  if(step < steps.length-1){ step++; renderStep(); }
+  if (step < steps.length - 1) { step++; renderStep(); }
 }
 function prevStep() {
-  if(step>0){ step--; renderStep(); }
+  if (step > 0) { step--; renderStep(); }
 }
 
 // XP/streak update
