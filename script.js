@@ -18,7 +18,7 @@ feedbackEl.style.fontWeight = "bold";
 stepContent.appendChild(feedbackEl);
 
 // ===== PUT YOUR OPENAI API KEY HERE =====
-const OPENAI_API_KEY = "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";
+const OPENAI_API_KEY = "ADD KEY HERE";
 
 // Pages
 function goHome() {
